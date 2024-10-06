@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Your ID session</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input, select {
+            margin-top: 10px;
+            padding: 10px;
+            width: calc(100% - 22px);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        img {
+            margin-top: 20px;
+            max-width: 100%;
+        }
+        #pairingCode, #qrCodeMessage, #sessionIdContainer {
+            margin-top: 20px;
+            display: none;
+            color: green;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        footer a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Select Method</h1>
+        <button id="qrButton">Scan QR Code</button>
+        <button id="pairingButton">Pair with WhatsApp Number</button>
+        <div id="inputContainer" style="display: none;">
+            <select id="countryCode">
+                <option value="62">+62 (Indonesia)</option>
+                <option value="1">+1 (USA)</option>
+                <option value="44">+44 (UK)</option>
+                <option value="91">+91 (India)</option>
+                <option value="49">+49 (Germany)</option>
+                <!-- Tambahkan kode negara lain sesuai kebutuhan -->
+            </select>
+            <input type="text" id="numberInput" placeholder="Enter your number (e.g., 82217590187)">
+            <button id="submitButton">Submit</button>
+        </div>
+        <img id="qrCodeImage" style="display: none;" alt="QR Code">
+        <p id="pairingCode" style="display: none;"></p>
+        <p id="qrCodeMessage" style="display: none;"></p>
+        <div id="sessionIdContainer" style="display: none;">
+            <p id="sessionId"></p>
+            <button id="copyButton">Copy Session ID</button>
+        </div>
+    </div>
+
+    <footer>
+        Created by <a href="https://whatsapp.com/channel/0029VaFNnRTHLHQR6G0fC01O" target="_blank">Kaze</a>
+    </footer>
+
+    <script>
+        const qrButton = document.getElementById('qrButton');
+        const pairingButton = document.getElementById('pairingButton');
+        const inputContainer = document.getElementById('inputContainer');
+        const numberInput = document.getElementById('numberInput');
+        const submitButton = document.getElementById('submitButton');
+        const qrCodeImage = document.getElementById('qrCodeImage');
+        const pairingCode = document.getElementById('pairingCode');
+        const qrCodeMessage = document.getElementById('qrCodeMessage');
+        const countryCode = document.getElementById('countryCode');
+        const sessionIdContainer = document.getElementById('sessionIdContainer');
+        const sessionIdDisplay = document.getElementById('sessionId');
+        const copyButton = document.getElementById('copyButton');
+
+        qrButton.addEventListener('click', () => {
+            inputContainer.style.display = 'none';
+            qrCodeImage.style.display = 'block';
+            qrCodeMessage.style.display = 'none'; // Reset QR code message
+            sessionIdContainer.style.display = 'none'; // Reset session ID
+            fetchQRCode();
+        });
+
+        pairingButton.addEventListener('click', () => {
+            inputContainer.style.display = 'block';
+            numberInput.value = ''; // Clear input
+            qrCodeImage.style.display = 'none';
+            pairingCode.style.display = 'none';
+            qrCodeMessage.style.display = 'none'; // Reset QR code message
+            sessionIdContainer.style.display = 'none'; // Reset session ID
+        });
+
+        submitButton.addEventListener('click', () => {
+            const number = numberInput.value;
+            const countryDialCode = countryCode.value;
+
+            if (number) {
+                const fullNumber = countryDialCode + number; // Menggabungkan kode negara dengan nomor
+                fetch('/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ method: 'pair', number: fullNumber })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    pairingCode.textContent = data.message; // Display pairing message
+                    pairingCode.style.display = 'block';
+                    sessionIdDisplay.textContent = data.sessionId; // Display session ID
+                    sessionIdContainer.style.display = 'block'; // Show session ID container
+                    qrCodeMessage.style.display = 'none'; // Hide QR code message
+                });
+            } else {
+                alert('Please enter a valid WhatsApp number.');
+            }
+        });
+
+        function fetchQRCode() {
+            fetch('/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ method: 'qr' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.qrCode) {
+                    qrCodeImage.src = data.qrCode; // Update QR Code image
+                    qrCodeImage.style.display = 'block';
+
+                    // Menampilkan pesan setelah QR Code dibaca
+                    qrCodeMessage.textContent = "QR Code generated. Please scan.";
+                    qrCodeMessage.style.display = 'block';
+                }
+            });
+            setTimeout(fetchQRCode, 30000); // Call fetchQRCode again after 30 seconds
+        }
+
+        // Fungsi untuk menyalin session ID ke clipboard
+        copyButton.addEventListener('click', () => {
+            const sessionId = sessionIdDisplay.textContent;
+            navigator.clipboard.writeText(sessionId).then(() => {
+                alert('Session ID copied to clipboard!');
+            });
+        });
+    </script>
+</body>
+</html>
