@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, delay } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, makeInMemoryStore, fetchLatestBaileysVersion, delay } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const QRCode = require('qrcode');
